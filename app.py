@@ -6,13 +6,8 @@ Main Streamlit Application
 import streamlit as st
 import pandas as pd
 import os
-from dotenv import load_dotenv
-from src.parsers.excel_parser import ExcelInvoiceParser
-from src.validators.gst_validator import GSTValidator
-from src.utils.ai_explainer import AIExplainer
-from src.utils.ai_chat import AIChatAssistant
 
-# Load secrets from Streamlit Cloud
+# Load secrets from Streamlit Cloud OR local .env
 try:
     # For Streamlit Cloud deployment
     os.environ['AWS_ACCESS_KEY_ID'] = st.secrets['AWS_ACCESS_KEY_ID']
@@ -25,6 +20,13 @@ except:
         load_dotenv()
     except:
         pass
+
+# Now import your modules (after environment is set)
+from src.parsers.excel_parser import ExcelInvoiceParser
+from src.validators.gst_validator import GSTValidator
+from src.utils.ai_explainer import AIExplainer
+from src.utils.ai_chat import AIChatAssistant
+
 
 # Page configuration
 st.set_page_config(
