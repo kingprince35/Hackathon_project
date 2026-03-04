@@ -138,20 +138,20 @@ with tab1:
             f.write(uploaded_file.getvalue())
         
         # Parse invoice
-        with st.spinner("📄 Parsing invoice..."):
+        with st.spinner("Parsing invoice..."):
             parse_result = parser.parse(temp_file)
         
         if not parse_result["success"]:
-            st.error(f"❌ Error parsing invoice: {parse_result['error']}")
+            st.error(f"Error parsing invoice: {parse_result['error']}")
             st.stop()
         
         invoice_data = parse_result["data"]
         
         # Show success
-        st.success("✅ Invoice parsed successfully!")
+        st.success("Invoice parsed successfully!")
         
         # Invoice preview
-        with st.expander("📄 Invoice Preview", expanded=True):
+        with st.expander("Invoice Preview", expanded=True):
             col1, col2, col3 = st.columns(3)
             
             with col1:
@@ -177,15 +177,15 @@ with tab1:
         st.divider()
         
         # Validate button
-        if st.button("🔍 Validate Against GST Rules", type="primary", use_container_width=True):
-            with st.spinner("🔍 Validating invoice against GST compliance rules..."):
+        if st.button("Validate Against GST Rules", type="primary", use_container_width=True):
+            with st.spinner("Validating invoice against GST compliance rules..."):
                 validation_result = validator.validate(invoice_data)
             
             st.divider()
-            st.header("📋 Validation Results")
+            st.header("Validation Results")
             
             if validation_result["valid"]:
-                st.success("### ✅ Invoice is GST Compliant!")
+                st.success("### Invoice is GST Compliant!")
                 st.balloons()
                 
                 st.markdown("""
