@@ -12,8 +12,19 @@ from src.validators.gst_validator import GSTValidator
 from src.utils.ai_explainer import AIExplainer
 from src.utils.ai_chat import AIChatAssistant
 
-# Load environment variables
-load_dotenv()
+# Load secrets from Streamlit Cloud
+try:
+    # For Streamlit Cloud deployment
+    os.environ['AWS_ACCESS_KEY_ID'] = st.secrets['AWS_ACCESS_KEY_ID']
+    os.environ['AWS_SECRET_ACCESS_KEY'] = st.secrets['AWS_SECRET_ACCESS_KEY']
+    os.environ['AWS_DEFAULT_REGION'] = st.secrets['AWS_DEFAULT_REGION']
+except:
+    # For local development - load from .env
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except:
+        pass
 
 # Page configuration
 st.set_page_config(
