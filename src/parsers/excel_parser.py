@@ -1,4 +1,4 @@
-"""Excel Invoice Parser - Fixed Version"""
+"""Excel Invoice Parser - Fixed for Percentage Format"""
 
 import pandas as pd
 from typing import Dict
@@ -12,6 +12,28 @@ class ExcelInvoiceParser:
             'GSTIN Buyer', 'Item Name', 'HSN Code', 
             'Quantity', 'Unit Price', 'GST Rate'
         ]
+    
+    def _parse_percentage(self, value):
+        """Convert percentage string to number (e.g., '18%' -> 18)"""
+        if pd.isna(value):
+            return 0
+        
+        # Convert to string and remove % symbol
+        str_value = str(value).strip().replace('%', '')
+        
+        try:
+            return float(str_value)
+        except:
+            return 0
+    
+    def _parse_number(self, value):
+        """Safely parse numeric values"""
+        if pd.isna(value):
+            return 0
+        try:
+            return float(value)
+        except:
+            return 0
     
     def parse(self, file_path: str) -> Dict:
         """
@@ -52,7 +74,6 @@ class ExcelInvoiceParser:
                 }
             
             # Extract header information (from first row)
-            # Use .iloc[0] safely with error handling
             try:
                 invoice_number = str(df['Invoice Number'].iloc[0]) if not df['Invoice Number'].empty else "N/A"
                 invoice_date = str(df['Invoice Date'].iloc[0]) if not df['Invoice Date'].empty else "N/A"
@@ -63,7 +84,8 @@ class ExcelInvoiceParser:
                 if 'Place of Supply' in df.columns:
                     place_of_supply = str(df['Place of Supply'].iloc[0])
                 else:
-                    place_of_supply = '27'  # Default
+                    # Extract from GSTIN (first 2 digits)
+                    place_of_supply = gstin_seller[:2] if len(gstin_seller) >= 2 else '27'
                 
             except (IndexError, KeyError) as e:
                 return {
@@ -87,10 +109,14 @@ class ExcelInvoiceParser:
                     if pd.isna(row['Item Name']) or pd.isna(row['HSN Code']):
                         continue
                     
-                    # Parse numeric values safely
-                    quantity = float(row['Quantity']) if not pd.isna(row['Quantity']) else 0
-                    unit_price = float(row['Unit Price']) if not pd.isna(row['Unit Price']) else 0
-                    gst_rate = float(row['GST Rate']) if not pd.isna(row['GST Rate']) else 0
+                    # Parse numeric values safely - HANDLE PERCENTAGE!
+                    quantity = self._parse_number(row['Quantity'])
+                    unit_price = self._parse_number(row['Unit Price'])
+                    gst_rate = self._parse_percentage(row['GST Rate'])  # ✅ Handles "18%"
+                    
+                    # Skip if quantity or price is 0
+                    if quantity <= 0 or unit_price <= 0:
+                        continue
                     
                     taxable_value = quantity * unit_price
                     
@@ -113,25 +139,26 @@ class ExcelInvoiceParser:
                     
                 except Exception as e:
                     # Skip problematic rows but continue processing
+                    print(f"Warning: Skipped row {idx + 1}: {str(e)}")
                     continue
             
             # Check if we got any items
             if not invoice_data["items"]:
                 return {
                     "success": False,
-                    "error": "No valid items found in invoice"
+                    "error": "No valid items found in invoice. Please check that Item Name, HSN Code, Quantity, Unit Price, and GST Rate are filled correctly."
                 }
             
             # Calculate totals
-            invoice_data["total_taxable_value"] = sum(
+            invoice_data["total_taxable_value"] = round(sum(
                 item['taxable_value'] for item in invoice_data["items"]
-            )
-            invoice_data["total_gst"] = sum(
+            ), 2)
+            invoice_data["total_gst"] = round(sum(
                 item['gst_amount'] for item in invoice_data["items"]
-            )
-            invoice_data["total_amount"] = sum(
+            ), 2)
+            invoice_data["total_amount"] = round(sum(
                 item['total_amount'] for item in invoice_data["items"]
-            )
+            ), 2)
             
             return {
                 "success": True,
